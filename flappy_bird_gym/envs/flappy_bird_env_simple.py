@@ -113,6 +113,7 @@ class FlappyBirdEnvSimple(gym.Env):
         return np.array([
             h_dist,
             v_dist,
+            player_y,
         ])
 
     def step(self,
@@ -135,10 +136,11 @@ class FlappyBirdEnvSimple(gym.Env):
                   otherwise);
                 * an info dictionary.
         """
+        prev_points = self._game.score
         alive = self._game.update_state(action)
         obs = self._get_observation()
 
-        reward = 1
+        reward = self._game.score - prev_points
 
         done = not alive
         info = {"score": self._game.score}
