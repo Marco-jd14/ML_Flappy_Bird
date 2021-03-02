@@ -166,6 +166,8 @@ class FlappyBirdLogic:
         # if player crashes into ground
         if self.player_y + PLAYER_HEIGHT >= self.base_y - 1:
             return True
+        elif self.player_y < 0:
+            return True
         else:
             player_rect = pygame.Rect(self.player_x, self.player_y,
                                       PLAYER_WIDTH, PLAYER_HEIGHT)
