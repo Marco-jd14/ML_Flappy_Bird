@@ -201,7 +201,7 @@ class FlappyBirdLogic:
             if self.player_y > -2 * PLAYER_HEIGHT:
                 self.player_vel_y = PLAYER_FLAP_ACC
                 self._player_flapped = True
-                self.sound_cache = "wing"
+                # self.sound_cache = "wing"
 
         self.last_action = action
         if self.check_crash():
@@ -214,7 +214,7 @@ class FlappyBirdLogic:
             pipe_mid_pos = pipe['x'] + PIPE_WIDTH / 2
             if pipe_mid_pos <= player_mid_pos < pipe_mid_pos + 4:
                 self.score += 1
-                self.sound_cache = "point"
+                # self.sound_cache = "point"
 
         # player_index base_x change
         if (self._loop_iter + 1) % 3 == 0:
