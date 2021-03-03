@@ -72,4 +72,4 @@ if __name__=='__main__':
 
     options = parser.parse_args()
 
-    play_game(options.verbose, options.show_gui, options.fps)
+    play_game(show_prints=options.verbose, show_gui=options.show_gui, fps=options.fps)
