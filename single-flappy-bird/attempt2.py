@@ -39,10 +39,10 @@ def main(options):
         print("\nTraining took %.2f mins\n"%((end1-start1).seconds/60))
 
     if overwrite:
-        dec = 10
+        dec = 100
         selected_scores = np.zeros(int(len(all_scores)/dec))
         for i in range(len(selected_scores)):
-            selected_scores[i] = np.max(all_scores[i*dec:(i+1)*dec])
+            selected_scores[i] = np.average(all_scores[i*dec:(i+1)*dec])
 
     with open(filename, 'rb') as f:
         q_table = np.load(f)
@@ -50,7 +50,7 @@ def main(options):
     # play_q_game(q_table, env, fps=20)
     print("Proportion of q_table that is empty: %.2f%%" %(len(q_table[np.all(q_table==0.0,axis=2)])/nr_states_h/nr_states_v*100))
 
-    repeat = 100000
+    repeat = 10000
     start2 = datetime.now()
     results = np.zeros(repeat)
     for i in range(repeat):
@@ -64,7 +64,7 @@ def main(options):
         plt.subplots_adjust(hspace=0.8)
 
         axs[0].plot(all_scores, 'ob', alpha=0.1, markersize=2)
-        axs[0].plot(np.arange(len(all_scores))[all_scores>3], all_scores[all_scores>3], 'ob', alpha=1, markersize=2)
+        axs[0].plot(np.arange(len(all_scores))[all_scores>3], all_scores[all_scores>3], 'ob', alpha=0.8, markersize=2)
         axs[0].set_title("Learning progress")
         axs[0].set_xlabel("Iteration")
         axs[0].set_ylabel("Points scored")
@@ -81,7 +81,8 @@ def main(options):
         fig, axs = plt.subplots(2,1)
         plt.subplots_adjust(hspace=0.8)
 
-        axs[0].plot(results, 'r', linewidth=0.7)
+        axs[0].plot(results, 'ob', alpha=0.1, markersize=2)
+        axs[0].plot(np.arange(len(results))[results>3], results[results>3], 'ob', alpha=0.8, markersize=2)
         axs[0].set_title("After learning")
         axs[0].set_xlabel("Iteration")
         axs[0].set_ylabel("Points scored")
@@ -105,7 +106,7 @@ def q_learning(env, q_table):
     gamma = 0.6
     epsilon = 0.1
 
-    repeat = 100000
+    repeat = 10000
 
     # For plotting metrics
     all_scores = np.zeros(repeat)
