@@ -14,16 +14,23 @@ from datetime import datetime
 np.set_printoptions(suppress=True)
 
 
-nr_feats = 3
+nr_feats = 2
 
 def main(options):
 
+    start = datetime.now()
+    env = flappy_bird_gym.make("FlappyBird-v0")
+
     observation_history = np.zeros((1,nr_feats))
-    for i in range(100):
-        info, obs = play_game(options.verbose, options.show_gui, options.fps)
+    for i in range(1000):
+        info, obs = play_game(env, options.verbose, options.show_gui, options.fps)
         observation_history = np.concatenate((observation_history, obs))
 
     observation_history = observation_history[1:]
+
+
+    end = datetime.now()
+    print("Took %.2f mins\n"%((end-start).seconds/60))
 
     print("Minima:", np.min(observation_history,axis=0))
     print("Maxima:", np.max(observation_history,axis=0))
@@ -104,9 +111,11 @@ def v_state(v_dist):
     #first scale between 0 and 1 then distribute over the remaining nr of states
     return int((v_dist-min_value)/(max_value-min_value) * (100-8)) + 4
 
-def play_game(show_prints=False, show_gui=False, fps=100):
+def play_game(env=0, show_prints=False, show_gui=False, fps=100):
 
-    env = flappy_bird_gym.make("FlappyBird-v0")
+    if not env:
+        env = flappy_bird_gym.make("FlappyBird-v0")
+
     obs = env.reset()
 
     if show_gui:

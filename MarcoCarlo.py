@@ -9,9 +9,11 @@ import time
 import pygame
 from argparse import ArgumentParser
 
-def play_game(show_prints=False, show_gui=False, fps=100):
+def play_game(env=0, show_prints=False, show_gui=False, fps=100):
 
-    env = flappy_bird_gym.make("FlappyBird-v0")
+    if not env:
+        env = flappy_bird_gym.make("FlappyBird-v0")
+
     obs = env.reset()
 
     if show_gui:

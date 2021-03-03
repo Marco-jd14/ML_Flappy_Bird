@@ -3,14 +3,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 import time
+import flappy_bird_gym
 
 def main():
-    repeat = 1000
+    repeat = 10
+    env = flappy_bird_gym.make("FlappyBird-v0")
 
     start = datetime.now()
     results = np.zeros(repeat)
     for i in range(repeat):
-        results[i] = MarcoCarlo.play_game(show_prints=False, show_gui=False)['score']
+        results[i] = MarcoCarlo.play_game(env, show_prints=False, show_gui=False)['score']
 
     end = datetime.now()
 

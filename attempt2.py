@@ -17,13 +17,14 @@ np.set_printoptions(suppress=True)
 nr_feats = 2
 
 def main(options):
+    env = flappy_bird_gym.make("FlappyBird-v0")
 
     for i in range(10):
-        info = play_game(options.verbose, options.show_gui, options.fps)
+        info = play_game(env, options.verbose, options.show_gui, options.fps)
 
 
-    # Minima: [  0.00347222  -0.51070313     -8.        ]
-    # Maxima: [  1.64236111   0.52148438    380.48      ]
+    # Minima: [  0.00347222  -0.51070313  ]
+    # Maxima: [  1.64236111   0.52148438  ]
 
     h_range = np.linspace(0.0, 1.65, 1000)
     v_range = np.linspace(-0.52, 0.53, 1000)
@@ -41,7 +42,6 @@ def main(options):
     print((set(v_states)))
 
 
-    # env = flappy_bird_gym.make("FlappyBird-v0")
     # q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
 def h_state(h_dist):
@@ -82,9 +82,11 @@ def v_state(v_dist):
     #first scale between 0 and 1 then distribute over the remaining nr of states
     return int((v_dist-min_value)/(max_value-min_value) * (100-8)) + 4
 
-def play_game(show_prints=False, show_gui=False, fps=100):
 
-    env = flappy_bird_gym.make("FlappyBird-v0")
+def play_game(env=0, show_prints=False, show_gui=False, fps=100):
+
+    if not env:
+        env = flappy_bird_gym.make("FlappyBird-v0")
     obs = env.reset()
 
     if show_gui:
@@ -97,11 +99,11 @@ def play_game(show_prints=False, show_gui=False, fps=100):
             pygame.event.pump()
 
         obs = env._get_observation()
-        # if obs[1] < -0.05:
-        #     action = 1 #flap
-        # else:
-        #     action = 0 #idle
-        action = 1
+        if obs[1] < -0.05:
+            action = 1 #flap
+        else:
+            action = 0 #idle
+        # action = 1
 
         # Processing:
         obs, reward, done, info = env.step(action)
