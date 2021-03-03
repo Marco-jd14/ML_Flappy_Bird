@@ -113,7 +113,6 @@ class FlappyBirdEnvSimple(gym.Env):
         return np.array([
             h_dist,
             v_dist,
-            player_y,
         ])
 
     def step(self,

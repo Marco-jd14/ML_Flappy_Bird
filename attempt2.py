@@ -14,7 +14,7 @@ from datetime import datetime
 np.set_printoptions(suppress=True)
 
 
-nr_feats = 3
+nr_feats = 2
 
 def main(options):
 
@@ -36,8 +36,9 @@ def main(options):
     for i in range(len(v_range)):
         v_states[i] = v_state(v_range[i])
 
-    print(len(set(h_states)))
-    print(len(set(v_states)))
+    print((set(h_states)))
+    print("")
+    print((set(v_states)))
 
 
     # env = flappy_bird_gym.make("FlappyBird-v0")
@@ -45,7 +46,7 @@ def main(options):
 
 def h_state(h_dist):
     # states 0-99
-    min_value = 0
+    min_value = 0.0
     max_value = 0.6
 
     if h_dist < min_value:
@@ -96,11 +97,11 @@ def play_game(show_prints=False, show_gui=False, fps=100):
             pygame.event.pump()
 
         obs = env._get_observation()
-        if obs[1] < -0.05:
-            action = 1 #flap
-        else:
-            action = 0 #idle
-        # action = 1
+        # if obs[1] < -0.05:
+        #     action = 1 #flap
+        # else:
+        #     action = 0 #idle
+        action = 1
 
         # Processing:
         obs, reward, done, info = env.step(action)

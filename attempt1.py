@@ -38,9 +38,9 @@ def main(options):
     plt.title("v_dist")
     plt.hist(observation_history[:,1], bins=40)
     plt.subplots_adjust(wspace=0.3)
-    plt.savefig("hist.png")
-    plt.subplot(1,3,3)
-    plt.hist(observation_history[:,2])
+    # plt.savefig("hist.png")
+    # plt.subplot(1,3,3)
+    # plt.hist(observation_history[:,2])
 
     h_range = np.linspace(0.0, 1.65, 1000)
     v_range = np.linspace(-0.52, 0.53, 1000)
@@ -91,6 +91,7 @@ def v_state(v_dist):
         return 2
     elif v_dist < min_value:
         return 3
+
     if v_dist > 0.3:
         return 99
     elif v_dist > 0.2:
@@ -124,7 +125,7 @@ def play_game(show_prints=False, show_gui=False, fps=100):
             action = 1 #flap
         else:
             action = 0 #idle
-        # action = 1
+        # action = 0
 
         # Processing:
         obs, reward, done, info = env.step(action)
