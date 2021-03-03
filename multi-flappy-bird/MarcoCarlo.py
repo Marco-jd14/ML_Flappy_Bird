@@ -14,7 +14,8 @@ def play_game(env=0, show_prints=False, show_gui=False, fps=100):
     if not env:
         env = flappy_bird_gym.make("FlappyBird-v0")
 
-    obs = env.reset(5)
+    nr_of_birds = 5
+    obs = env.reset(nr_of_birds)
 
     if show_gui:
         env.render()
