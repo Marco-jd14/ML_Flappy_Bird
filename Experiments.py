@@ -1,4 +1,5 @@
 import MarcoCarlo
+import attempt2
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
@@ -9,10 +10,15 @@ def main():
     repeat = 10
     env = flappy_bird_gym.make("FlappyBird-v0")
 
+    filename = "q_table.npy"
+    with open(filename, 'rb') as f:
+        q_table = np.load(f)
+
     start = datetime.now()
     results = np.zeros(repeat)
     for i in range(repeat):
-        results[i] = MarcoCarlo.play_game(env, show_prints=False, show_gui=False)['score']
+        # results[i] = MarcoCarlo.play_game(env, show_prints=False, show_gui=False)['score']
+        results[i] = attempt2.play_q_game(q_table, env, show_prints=False, show_gui=False)['score']
 
     end = datetime.now()
 

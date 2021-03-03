@@ -29,6 +29,7 @@ from typing import Dict, Tuple, Optional, Union
 import gym
 import numpy as np
 import pygame
+from datetime import datetime
 
 from flappy_bird_gym.envs.game_logic import FlappyBirdLogic
 from flappy_bird_gym.envs.game_logic import PIPE_WIDTH, PIPE_HEIGHT
@@ -135,14 +136,19 @@ class FlappyBirdEnvSimple(gym.Env):
                   otherwise);
                 * an info dictionary.
         """
+        start = datetime.now()
         prev_points = self._game.score
         alive = self._game.update_state(action)
         obs = self._get_observation()
 
-        reward = self._game.score - prev_points
-
         done = not alive
         info = {"score": self._game.score}
+
+        if done:
+            reward = -10
+        else:
+            reward = self._game.score - prev_points - action
+            # reward += (datetime.now() - start).microseconds/10000
 
         return obs, reward, done, info
 

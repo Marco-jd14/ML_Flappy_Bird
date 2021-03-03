@@ -46,6 +46,8 @@ def play_game(env=0, show_prints=False, show_gui=False, fps=100):
 
         # Checking if the player is still alive
         if done:
+            print(obs)
+            print("\tReward:", reward, "\tdied:",done, "\tinfo:",info)
             break
 
     env.close()

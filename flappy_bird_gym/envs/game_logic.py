@@ -117,17 +117,17 @@ class FlappyBirdLogic:
 
         # List of upper pipes:
         self.upper_pipes = [
-            {"x": self._screen_width + 200,
+            {"x": self._screen_width - 50,
              "y": new_pipe1[0]["y"]},
-            {"x": self._screen_width + 200 + (self._screen_width / 2),
+            {"x": self._screen_width -50 + (self._screen_width / 2),
              "y": new_pipe2[0]["y"]},
         ]
 
         # List of lower pipes:
         self.lower_pipes = [
-            {"x": self._screen_width + 200,
+            {"x": self._screen_width - 50,
              "y": new_pipe1[1]["y"]},
-            {"x": self._screen_width + 200 + (self._screen_width / 2),
+            {"x": self._screen_width -50 + (self._screen_width / 2),
              "y": new_pipe2[1]["y"]},
         ]
 
@@ -207,7 +207,7 @@ class FlappyBirdLogic:
 
         self.last_action = action
         if self.check_crash():
-            self.sound_cache = "hit"
+            # self.sound_cache = "hit"
             return False
 
         # check for score
