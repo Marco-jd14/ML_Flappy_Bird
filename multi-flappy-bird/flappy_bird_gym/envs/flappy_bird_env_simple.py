@@ -146,7 +146,7 @@ class FlappyBirdEnvSimple(gym.Env):
         if missing_actions > 0:
             action = np.concatenate((action, np.zeros(missing_actions)))
 
-        to_return = [[] for k in range(len(birds))]
+        # to_return = [[] for k in range(len(birds))]
 
         start = datetime.now()
 
@@ -158,19 +158,22 @@ class FlappyBirdEnvSimple(gym.Env):
 
         alives = self._game.update_state(action) #alive info for all birds
         obs = self._get_observation()
+        done = np.array([not alive for alive in alives])
+        # info = [{"score": bird.score} for bird in birds]
+        info = np.array([bird.score for bird in birds])
 
         for i in range(len(birds)):
-            done = not alives[i]
-            if done:
+            # done = not alives[i]
+            if done[i]:
                 rewards[i] = -10 if prev_alives[i] else 0
             else:
                 rewards[i] += birds[i].score - action[i] #rewards = new_points - prev_points - action
-                # rewards[i] += (datetime.now() - start).microseconds/10000
+                rewards[i] += (datetime.now() - start).microseconds/10000
 
-            info = {"score": birds[i].score}
-            to_return[i] = [obs[i], rewards[i], done, info]
+            # info = {"score": birds[i].score}
+            # to_return[i] = [obs[i], rewards[i], done, info]
 
-        return to_return, not any(alives)
+        return obs, rewards, done, info#not any(alives)
 
     def reset(self, nr_of_birds):
         """ Resets the environment (starts a new game). """

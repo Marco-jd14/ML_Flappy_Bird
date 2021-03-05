@@ -58,7 +58,7 @@ def play():
         # print(f"Obs: {obs}")
         # print(f"Score: {score}\n")
 
-        clock.tick(15)
+        clock.tick(30)
 
         if done:
             env.render()
