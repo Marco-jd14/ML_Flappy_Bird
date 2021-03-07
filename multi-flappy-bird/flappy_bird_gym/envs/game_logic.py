@@ -185,6 +185,7 @@ class FlappyBirdLogic:
         # if player crashes into ground
         if bird.player_y + PLAYER_HEIGHT >= self.base_y - 1:
             return True
+        # if player hits the ceiling
         elif bird.player_y < 0:
             return True
         else:

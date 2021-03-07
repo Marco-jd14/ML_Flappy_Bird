@@ -14,7 +14,7 @@ def play_game(env=0, show_prints=False, show_gui=False, fps=100):
     if not env:
         env = flappy_bird_gym.make("FlappyBird-v0")
 
-    nr_of_birds = 1
+    nr_of_birds = 3
     obs = env.reset(nr_of_birds)
 
     if show_gui:
@@ -26,10 +26,10 @@ def play_game(env=0, show_prints=False, show_gui=False, fps=100):
             pygame.event.pump()
 
         obs = env._get_observation()
-        action0 = obs[0][1] < -0.05
+        action = obs[0][1] < -0.05
 
         # Processing:
-        obs, reward, done, scores = env.step([action0])
+        obs, reward, done, scores = env.step([action, 0, 1])
 
         if show_prints:
             print("")
