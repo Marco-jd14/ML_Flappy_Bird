@@ -31,13 +31,12 @@ def play_game(env=0, show_prints=False, show_gui=False, fps=100):
         action2 = obs[2][1] < -0.03
 
         # Processing:
-        bird_infos, all_dead = env.step([action0, action1, action2, 1, 0])
+        obs, reward, done, info = env.step([action0, action1, action2, 1, 0])
 
         if show_prints:
             print("")
-            for i in range(len(bird_infos)):
-                obs, reward, done, info = bird_infos[i]
-                print("BIRD %d:\t"%i, obs, "\tReward:", reward, "\tdied:",done, "\tinfo:",info)
+            for i in range(len(obs)):
+                print("BIRD %d:\t"%i, obs[i], "\tReward:", reward[i], "\tdied:",done[i], "\tinfo:",info[i])
 
         # Rendering the game:
         # (remove this two lines during training)
@@ -46,7 +45,7 @@ def play_game(env=0, show_prints=False, show_gui=False, fps=100):
             time.sleep(1 / fps)  # FPS
 
         # Checking if any the player is still alive
-        if all_dead:
+        if all(done):
             break
 
     env.close()

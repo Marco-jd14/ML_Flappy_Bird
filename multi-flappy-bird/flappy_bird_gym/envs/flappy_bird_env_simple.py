@@ -141,36 +141,29 @@ class FlappyBirdEnvSimple(gym.Env):
                   otherwise);
                 * an info dictionary.
         """
-        birds = self._game.birds
-        missing_actions = len(birds) - len(action)  # positive if the user did not specify an action for all birds
+        missing_actions = self._game.nr_of_birds - len(action)  # positive if the user did not specify an action for all birds
         if missing_actions > 0:
             action = np.concatenate((action, np.zeros(missing_actions)))
 
-        to_return = [[] for k in range(len(birds))]
-
         start = datetime.now()
 
-        rewards = np.zeros_like(birds)
-        prev_alives = [True for k in range(len(birds))]
-        for i in range(len(birds)):
-            rewards[i] = -birds[i].score  #save prev points first
-            prev_alives[i] = birds[i].alive
+        rewards = np.array([-bird.score for bird in self._game.birds])  #save prev scores first
+        prev_alives = np.array([bird.alive for bird in self._game.birds])
 
         alives = self._game.update_state(action) #alive info for all birds
-        obs = self._get_observation()
 
-        for i in range(len(birds)):
-            done = not alives[i]
-            if done:
+        obs = self._get_observation()
+        done = np.array([not alive for alive in alives])
+        info = np.array([bird.score for bird in self._game.birds])
+
+        for i in range(self._game.nr_of_birds):
+            if done[i]:
                 rewards[i] = -10 if prev_alives[i] else 0
             else:
-                rewards[i] += birds[i].score - action[i] #rewards = new_points - prev_points - action
-                # rewards[i] += (datetime.now() - start).microseconds/10000
+                rewards[i] += self._game.birds[i].score - action[i] #rewards = new_points - prev_points - action
+                rewards[i] += (datetime.now() - start).microseconds/10000
 
-            info = {"score": birds[i].score}
-            to_return[i] = [obs[i], rewards[i], done, info]
-
-        return to_return, not any(alives)
+        return obs, rewards, done, info
 
     def reset(self, nr_of_birds):
         """ Resets the environment (starts a new game). """
