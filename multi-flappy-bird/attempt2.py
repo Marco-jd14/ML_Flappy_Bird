@@ -20,8 +20,8 @@ np.set_printoptions(suppress=True)
 nr_states_h = 100
 nr_states_v = 100
 nr_feats = 2
-population_size = 1000
-q_its = int(100000/population_size)
+population_size = 500
+q_its = int(1000000/population_size)
 exp_pop_size = 2
 
 # For progress bar
@@ -35,14 +35,14 @@ def main(options):
     overwrite = 1
     filename = "q_table.npy"
     with open(filename, 'rb') as f:
-        q_table = np.load(f)
+        q_table_before = np.load(f)
 
     if overwrite or not os.path.isfile(filename):
         start1 = datetime.now()
 
-        # q_table = np.zeros([nr_states_h * nr_states_v, env.action_space.n])
-        # q_table, all_scores, all_rewards = q_learning(env, q_table)
-        q_table, all_scores = q_learning(env, q_table)
+        # q_table_before = np.zeros([nr_states_h * nr_states_v, env.action_space.n])
+        # q_table, all_scores, all_rewards = q_learning(env, q_table_before)
+        q_table, all_scores = q_learning(env, np.copy(q_table_before))
 
         np.save(filename, q_table)
         end1 = datetime.now()
@@ -54,15 +54,15 @@ def main(options):
     #     for i in range(len(selected_scores)):
     #         selected_scores[i] = np.average(all_scores[i*dec:(i+1)*dec])
 
-    with open(filename, 'rb') as f:
-        q_table2 = np.load(f)
+    # with open(filename, 'rb') as f:
+    #     q_table2 = np.load(f)
 
-    print(np.all(q_table==q_table2))
+    print(np.all(q_table==q_table_before))
 
     # play_q_game(q_table, env, fps=20)
     print("Proportion of q_table that is empty: %.2f%%\n" %(len(q_table[np.all(q_table==0.0,axis=1)])/nr_states_h/nr_states_v*100))
 
-    repeat = int(10000/exp_pop_size)
+    repeat = int(20000/exp_pop_size)
     start2 = datetime.now()
     results = np.zeros(repeat*exp_pop_size)
     for i in range(repeat):
@@ -118,6 +118,7 @@ def main(options):
 
 def q_learning(env, q_table):
     """Training the agent"""
+    # q_table_start = np.copy(q_table)
 
     # Hyperparameters
     alpha = 0.1
@@ -164,6 +165,7 @@ def q_learning(env, q_table):
 
             new_values = (1 - alpha) * old_values + alpha * (rewards + gamma * next_maxs)
             new_values[prev_done] = old_values[prev_done]
+
             q_table[states,actions] = new_values
 
             prev_done = done
@@ -176,6 +178,7 @@ def q_learning(env, q_table):
         # all_rewards[i] = total_rewards
         all_scores[i*population_size:(i+1)*population_size] = scores[:]
 
+        # print(np.all(q_table==q_table_start))
 
     return q_table, all_scores#, all_rewards
 
