@@ -52,16 +52,14 @@ def play():
                 action = 1
 
         # Processing:
-        information, all_dead = env.step([action])
-        obs, reward, done, info = information[0]
+        obs, reward, done, info = env.step([action])
 
-        score += reward
-        # print(f"Obs: {obs}")
-        # print(f"Score: {score}\n")
+        print(f"Obs: {obs[0]}")
+        print(f"Score: {info[0]}\n")
 
         clock.tick(15)
 
-        if all_dead:
+        if all(done):
             env.render()
             time.sleep(0.6)
             break
