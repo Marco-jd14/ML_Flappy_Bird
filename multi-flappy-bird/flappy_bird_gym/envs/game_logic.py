@@ -63,6 +63,22 @@ BACKGROUND_WIDTH = 288
 BACKGROUND_HEIGHT = 512
 ################################################################################
 class Bird:
+    """ Defines the state of any bird in the game.
+
+    Args:
+        screen_size (Tuple[int, int]): Tuple with the screen's width and height.
+
+    Attributes:
+        player_x (int): The player's x position.
+        player_y (int): The player's y position.
+        score (int): Current score of the player.
+        alive (bool): If the player is alive or not
+        player_vel_y (int): The player's vertical velocity.
+        player_rot (int): The player's rotation angle.
+        last_action (Optional[FlappyBirdLogic.Actions]): The last action taken
+            by the player. If `None`, the player hasn't taken any action yet.
+        player_idx (int): Current index of the bird's animation cycle.
+    """
     def __init__(self, 
         screen_size: Tuple[int, int]) -> None:
         self.player_x = int(screen_size[0] * 0.2)
@@ -93,24 +109,17 @@ class FlappyBirdLogic:
         pipe_gap_size (int): Space between a lower and an upper pipe.
 
     Attributes:
-        player_x (int): The player's x position.
-        player_y (int): The player's y position.
         base_x (int): The base/ground's x position.
         base_y (int): The base/ground's y position.
-        score (int): Current score of the player.
+        max_score (int): The current maximum score of all the players (or score of the best performing player).
         upper_pipes (List[Dict[str, int]): List with the upper pipes. Each pipe
             is represented by a dictionary containing two keys: "x" (the pipe's
             x position) and "y" (the pipe's y position).
         lower_pipes (List[Dict[str, int]): List with the lower pipes. Each pipe
             is represented by a dictionary containing two keys: "x" (the pipe's
             x position) and "y" (the pipe's y position).
-        player_vel_y (int): The player's vertical velocity.
-        player_rot (int): The player's rotation angle.
-        last_action (Optional[FlappyBirdLogic.Actions]): The last action taken
-            by the player. If `None`, the player hasn't taken any action yet.
         sound_cache (Optional[str]): Stores the name of the next sound to be
             played. If `None`, then no sound should be played.
-        player_idx (int): Current index of the bird's animation cycle.
     """
 
     def __init__(self,
@@ -171,11 +180,12 @@ class FlappyBirdLogic:
         ]
 
     def check_crash(self, bird) -> bool:
-        """ Returns True if player collides with the ground (base) or a pipe.
+        """ Returns True if the bird passed as argument collides with the ground (base) or a pipe.
         """
         # if player crashes into ground
         if bird.player_y + PLAYER_HEIGHT >= self.base_y - 1:
             return True
+        # if player hits the ceiling  
         elif bird.player_y < 0:
             return True
         else:
@@ -198,15 +208,15 @@ class FlappyBirdLogic:
 
         return False
 
-    def update_state(self, action: Union[Actions, int]) -> bool:
-        """ Given an action taken by the player, updates the game's state.
+    def update_state(self, actions: Union[Actions, int]) -> bool:
+        """ Given a list of actions taken, updates the game's state.
 
         Args:
-            action (Union[FlappyBirdLogic.Actions, int]): The action taken by
+            actions (list of Union[FlappyBirdLogic.Actions, int]): The actions taken by
                 the player.
 
         Returns:
-            `True` if the player is alive and `False` otherwise.
+            list of booleans that indicate for each bird individually if it is alive (`True`) or not (`False`).
         """
         to_return = [bird.alive for bird in self.birds]
 
@@ -217,13 +227,13 @@ class FlappyBirdLogic:
             bird = self.birds[i]
             if bird.alive:
                 self.sound_cache = None
-                if action[i] == FlappyBirdLogic.Actions.FLAP:
+                if actions[i] == FlappyBirdLogic.Actions.FLAP:
                     if bird.player_y > -2 * PLAYER_HEIGHT:
                         bird.player_vel_y = PLAYER_FLAP_ACC
                         bird._player_flapped = True
                         # self.sound_cache = "wing"
 
-                bird.last_action = action[i]
+                bird.last_action = actions[i]
                 if self.check_crash(bird):
                     # self.sound_cache = "hit"
                     bird.alive = False
