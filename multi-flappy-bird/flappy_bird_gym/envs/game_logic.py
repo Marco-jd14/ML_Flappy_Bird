@@ -213,7 +213,7 @@ class FlappyBirdLogic:
         self.base_x = -((-self.base_x + 100) % self._base_shift)
 
         max_points = 0
-        for i in range(len(self.birds)):
+        for i in range(self.nr_of_birds):
             bird = self.birds[i]
             if bird.alive:
                 self.sound_cache = None
