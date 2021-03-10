@@ -1,43 +1,35 @@
-import gym
-env_dict = gym.envs.registration.registry.env_specs.copy()
-for env in env_dict:
-    if 'FlappyBird-v0' in env or 'FlappyBird-rgb-v0' in env:
-        del gym.envs.registration.registry.env_specs[env]
-import flappy_bird_gym
-
 import time
 import pygame
+import flappy_bird_gym
 from argparse import ArgumentParser
 
-def play_game(env=0, show_prints=False, show_gui=False, fps=100):
 
-    if not env:
-        env = flappy_bird_gym.make("FlappyBird-v0")
+def start(show_prints=False, show_gui=False, fps=60, agents_num=1):
+    # create gym
+    env = flappy_bird_gym.make("FlappyBird-v0")
+    # get initial observation
+    obs = env.reset(agents_num)
 
-    nr_of_birds = 3
-    obs = env.reset(nr_of_birds)
-
+    # if GUI enabled, initialise the window and clear events
     if show_gui:
         env.render()
+        pygame.event.pump()
 
-    prev_score = -1
+    # Training
     while True:
-        if show_gui:
-            pygame.event.pump()
-
-        obs = env._get_observation()
+        # make decision
         action = obs[0][1] < -0.05
 
         # Processing:
         obs, reward, done, scores = env.step([action, 1, 0])
 
+        # logging
         if show_prints:
             print("")
             for i in range(len(obs)):
-                print("BIRD %d:\t"%i, obs[i], "\tReward:", reward[i], "\tdied:",done[i], "\tinfo:",scores[i])
+                print("BIRD %d:\t" % i, obs[i], "\tReward:", reward[i], "\tdied:", done[i], "\tinfo:", scores[i])
 
         # Rendering the game:
-        # (remove this two lines during training)
         if show_gui:
             env.render()
             time.sleep(1 / fps)  # FPS
@@ -46,10 +38,12 @@ def play_game(env=0, show_prints=False, show_gui=False, fps=100):
         if all(done):
             break
 
+    # clean up
     env.close()
-    return info
+    return scores
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     parser = ArgumentParser()
 
     parser.add_argument("-g",
@@ -65,9 +59,15 @@ if __name__=='__main__':
     parser.add_argument("-fps",
                         dest="fps",
                         type=int,
-                        default=100,
+                        default=60,
                         help="Specify in how many FPS the game should run")
+
+    parser.add_argument("-n",
+                        dest="agents_num",
+                        type=int,
+                        default=1,
+                        help="Specify in how many agents the game should has")
 
     options = parser.parse_args()
 
-    play_game(show_prints=options.verbose, show_gui=options.show_gui, fps=options.fps)
+    start(show_prints=options.verbose, show_gui=options.show_gui, fps=options.fps, agents_num=options.agents_num)
