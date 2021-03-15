@@ -1,4 +1,4 @@
-import random
+import os
 import time
 import numpy as np
 import pygame
@@ -301,7 +301,7 @@ def start(show_prints=False, show_gui=False, fps=60, agents_num=100):
 
     # create Genetic Algorithm Population with NN models
     GANN = GeneticNN(2, 10, agents_num, (-10, 10))
-    best_fit = 0
+    GOAT = 0
 
     # Training, record fitness, and play
     while True:
@@ -316,20 +316,18 @@ def start(show_prints=False, show_gui=False, fps=60, agents_num=100):
 
         # record fitness
         GANN.update_fitness(reward)
-        best_fit = GANN.get_best_fitness() if  GANN.get_best_fitness() > best_fit else best_fit
-        print("current best fit: ", best_fit)
+        GOAT = GANN.get_best_fitness() if GANN.get_best_fitness() > GOAT else GOAT
 
         # if all agents died, start new population
         if all(done):
+            print("\nGeneration {} Completed: Generation best: {}\n"
+                  .format(GANN.generation, GANN.get_best_fitness()))
             GANN.new_population()
-            print("generation number: ", GANN.generation)
             obs = env.reset(agents_num)
 
         # logging
         if show_prints:
-            for i in range(len(obs)):
-                print("BIRD %d:\t" % i, obs[i], "\tReward:", reward[i], "\tdied:", done[i], "\tinfo", scores[i])
-            print("\n")
+            print("\rCurrent Generation: {} \t GOAT: {}".format(GANN.generation, GOAT, 3), end='', flush=True)
 
         # Rendering the game:
         if show_gui:
