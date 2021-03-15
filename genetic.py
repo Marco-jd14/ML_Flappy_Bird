@@ -29,11 +29,11 @@ class NNModel:
         self.hidden_nodes = []
         for weights in hidden_weights:
             self.hidden_nodes.append(self.Node(weights))
-        # print('{}hidden layer created:\n{}{}'.format(bcolors.OKGREEN, hidden_weights, bcolors.CLEAR))
+        print('{}hidden layer created:\n{}{}'.format(bcolors.OKGREEN, hidden_weights, bcolors.CLEAR))
 
         # creating output layer
-        self.output = self.Node(output_weights)
-        # print('{}Output layer created: {}{}'.format(bcolors.OKGREEN, self.output.__str__(), bcolors.CLEAR))
+        self.output_node = self.Node(output_weights)
+        print('{}Output layer created: {}{}'.format(bcolors.OKGREEN, self.output_node.__str__(), bcolors.CLEAR))
 
         # record fitness
         self.fitness = 0
@@ -48,6 +48,9 @@ class NNModel:
         def sigmoid(x):
             return 1 / (1 + np.exp(-x))
 
+        def ReLU(x):
+            return x * (x > 0)
+
         # get each node's dot product and activate them
         hidden_layer_result = []
         for node in self.hidden_nodes:
@@ -56,7 +59,7 @@ class NNModel:
         hidden_layer_result = np.array(hidden_layer_result).T
 
         # get output node
-        prediction = sigmoid(np.dot(hidden_layer_result, self.output.weights))
+        prediction = sigmoid(np.dot(hidden_layer_result, self.output_node.weights))
         # print("hidden layer results: ", hidden_layer_result, "\t output", prediction)
         return prediction
 
@@ -118,7 +121,9 @@ class Genetic:
         offsprings.append(winners[np.random.randint(3)])
 
         # offspring mutation
-
+        for kid in offsprings:
+            # go through all nodes
+            self.mutate(kid)
 
         # store the latest population
         self.models.clear()
@@ -151,6 +156,12 @@ class Genetic:
         # pick one of the result
         return left if np.random.randint(2) == 1 else right
 
+    def mutate(self, offspring: NNModel):
+        mutation_factor = random.random() * 0.3
+        mutation_sign = 1 if random.random() > 0.5 else -1
+        offspring.hidden_nodes[np.random.randint(self.hidden_nodes_count)].weights[random.choice([0, 1])] *= (
+                    mutation_factor * mutation_sign)
+
 
 def start(show_prints=False, show_gui=False, fps=60, agents_num=10):
     # create gym
@@ -170,7 +181,12 @@ def start(show_prints=False, show_gui=False, fps=60, agents_num=10):
     # Training, record fitness, and play
     while True:
         # make decision
-        actions = birds.predict(obs)
+        predictions = birds.predict(obs)
+        actions = []
+        for x in predictions:
+            actions.append(x > 0.5)
+
+        # print(predictions)
 
         # Processing:
         obs, reward, done, scores = env.step(actions)
@@ -192,9 +208,16 @@ def start(show_prints=False, show_gui=False, fps=60, agents_num=10):
                 print(best_fit)
 
             birds.evolve_population()
+            for bird in birds.models:
+                for node in bird.hidden_nodes:
+                    print(node.weights)
+                print(bird.output_node.weights)
+                print("")
 
             # new game
+            break
             obs = env.reset(agents_num)
+            time.sleep(3)
 
         # logging
         if show_prints:
