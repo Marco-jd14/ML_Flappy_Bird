@@ -1,4 +1,3 @@
-import os
 import time
 import numpy as np
 import pygame
@@ -8,22 +7,22 @@ from argparse import ArgumentParser
 
 
 class NNModel:
-    def __init__(self, n_inputs: int, w_hidden: np.ndarray, w_output: np.ndarray):
+    def __init__(self, n_inputs: int, w_hidden: np.ndarray, w_output: np.ndarray, fitness=0):
         """
-        NNModel's interface is neuron weight list based [[w_hidden][w_output]]
+        NNModel's interface is neuron weights list based [[w_hidden][w_output]]
         except fitness record, it can not be changed after creation
         :param n_inputs: an integer suggest the number of inputs
         :param w_hidden: a 2 dimensional list holding weights for each hidden layer neuron
         :param w_output: a list holding weights for the output neuron
         """
-        self.fitness: float = 0
+        self.fitness: float = fitness
         self.n_inputs: Final[int] = n_inputs
         self.w_hidden: Final[np.ndarray] = w_hidden
         self.w_output: Final[np.ndarray] = w_output
 
     def __lt__(self, other):
         """
-        used for comparing between two NNModels's fitness
+        used for comparing between two NNModels' fitness
         :param other: the NNModel to compare
         :return: True if this model is fitter
         """
@@ -50,7 +49,7 @@ class NNModel:
     def get_output(self, inputs: List[float]) -> float:
         """
         Using sigmoid activation function to produce a output
-        1. calculate each neuron's output then activate it (including output_neuron)
+        calculate each neuron's output then activate it (including output_neuron)
         sigmoid (dot product of inputs & w_neuron)
         :return: the output corresponding to the inputs through NNModel, duh
         """
@@ -84,7 +83,7 @@ class NNModel:
         """
         w_hidden: np.ndarray = np.array(genes[0: n_inputs * n_hidden]).reshape(-1, 2)
         w_output: np.ndarray = np.array(genes[n_inputs * n_hidden:])
-        return NNModel(n_inputs, w_hidden, w_output)
+        return NNModel(n_inputs, w_hidden, w_output, fitness)
 
 
 class GeneticNN:
@@ -147,20 +146,29 @@ class GeneticNN:
             outputs.append(self.population[i].get_output(inputs[i]))
         return outputs
 
-    def update_fitness(self, all_fitness: List[float]) -> None:
+    def update_fitness(self, change: List[float]) -> None:
+        """
+        why are you even reading me -_-b
+        this function update the entire population's fitness record with ease
+        :param change: a list of change in fitness
+        :return:
+        """
         for i in range(self.n_pop):
-            self.population[i].update_fitness(all_fitness[i])
+            self.population[i].update_fitness(change[i])
 
-    def get_best_fitness(self):
+    def get_best_fitness(self) -> float:
+        """
+        return the best fitness within the current population at the moment when this method is called
+        :return: the best among us all (the best fitness at call time)
+        """
         snapshot = self.population.copy()
         snapshot.sort()
-
         return snapshot[0].fitness
 
     def select(self, mode: str, n_winner: int) -> List[np.ndarray]:
         """
         used in re-populate, one of the 3 steps: select, crossover, mutate
-        after sorting all the models by their fitness, select n_winner from the population
+        after sorting all the models by their fitness, select n_winner from the population's best half
 
         currently 3 mode provided
         1. best: return the top n_winners
@@ -228,7 +236,7 @@ class GeneticNN:
     @staticmethod
     def mutation(genes: np.ndarray, n_mutations: int, weight_bounds: Tuple[float, float]) -> np.ndarray:
         """
-        at a random position, a completely new weight is replaced on the gene sequence
+        at few random positions, a completely new weight is replaced on the gene sequence position
         :param genes: a gene sequence to mutate
         :param n_mutations: number of gene snipe to replace
         :param weight_bounds: the boundary of random weight
@@ -243,13 +251,14 @@ class GeneticNN:
 
     def new_population(self) -> None:
         """
-        re produce a new population based on the current one
+        reproduce a new population based on the current one
         first select the top half winner, they get to live to next generation (50%)
         then generate the offsprings by
-            1. select best two parents for crossover
-            2. select roulette few pairs parents for crossover
-            3. select random pairs parents for crossover
-        mutate all offsprings
+            1. select best two parents for crossover (5%)
+            2. select roulette few pairs parents for crossover (25%)
+            3. select random pairs parents for crossover (15%)
+            4. select random parents directly as offsprings (5%)
+        mutate all offsprings at 4 random gene position
         go nuts
         :return: the excitement
         """
@@ -305,13 +314,13 @@ def start(show_prints=False, show_gui=False, fps=60, agents_num=100):
 
     # Training, record fitness, and play
     while True:
-        # make decision
+        # to flap or not to flap
         predictions = GANN.get_output(obs)
         actions = []
         for x in predictions:
             actions.append(x > 0.5)
 
-        # Processing:
+        # Processing the action:
         obs, reward, done, scores = env.step(actions)
 
         # record fitness
@@ -327,16 +336,16 @@ def start(show_prints=False, show_gui=False, fps=60, agents_num=100):
 
         # logging
         if show_prints:
-            print("\rCurrent Generation: {} \t GOAT: {}".format(GANN.generation, GOAT, 3), end='', flush=True)
+            print("\rCurrent Generation: {} \t GOAT: {}".format(GANN.generation, GOAT), end='', flush=True)
 
         # Rendering the game:
         if show_gui:
             env.render()
             time.sleep(1 / fps)  # FPS
 
-    # clean up
-    env.close()
-    return scores
+    # clean up though not reachable right now lel
+    # env.close()
+    # return scores
 
 
 if __name__ == '__main__':
