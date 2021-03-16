@@ -22,10 +22,10 @@ nr_states_v = 100
 nr_feats = 2
 
 population_size = 100
-q_its = int(200000/population_size)
+q_its = int(100000/population_size)
 
 exp_pop_size = 5                    #every bird does exactly the same thing anyway (based on q_table)
-exp_its = int(10000/exp_pop_size)
+exp_its = int(2000/exp_pop_size)
 
 # For progress bar
 bar_length = 30
@@ -34,11 +34,12 @@ bar_length = 30
 def main(options):
     env = flappy_bird_gym.make("FlappyBird-v0")
 
-    train = 1
+    train = 0
     test_result = 1
     gui_loops = 0
 
-    filename = "q_table6.npy"
+    filename = "q_table4 - Insane.npy"
+    save_as = "q_table4.npy"
     if os.path.isfile(filename):
         with open(filename, 'rb') as f:
             q_table_before = np.load(f)
@@ -55,7 +56,7 @@ def main(options):
 
         end1 = datetime.now()
         print("\nTraining took %.2f mins\n"%((end1-start1).seconds/60))
-        np.save("q_table5.npy", q_table)
+        np.save(save_as, q_table)
         np.save("all_scores.npy", all_scores)
 
     else:
@@ -66,7 +67,7 @@ def main(options):
 
     # Uncomment to see the GUI play a game based on the q_table:
     for i in range(gui_loops):
-        play_q_game(q_table, env, show_prints=False, fps=20, pop_size=1)
+        play_q_game(q_table, env, show_prints=False, fps=40, pop_size=1)
 
     if test_result:
         start2 = datetime.now()
@@ -94,7 +95,7 @@ def main(options):
         plt.subplots_adjust(hspace=0.8)
 
         axs[0].plot(all_scores, 'ob', alpha=0.1, markersize=2)
-        axs[0].plot(np.arange(len(all_scores))[all_scores>3], all_scores[all_scores>3], 'ob', alpha=0.6, markersize=2)
+        axs[0].plot(np.arange(len(all_scores))[all_scores>=5], all_scores[all_scores>=5], 'ob', alpha=0.5, markersize=2)
         axs[0].set_title("Learning progress")
         axs[0].set_xlabel("Iteration")
         axs[0].set_ylabel("Points scored")
@@ -112,6 +113,7 @@ def main(options):
           height = int(freq[n])
           if height > 0:
               plt.annotate("%.1f%%"%(height/len(all_scores)*100),
+                           size = 8,
                            xy = (x, height),             # top left corner of the histogram bar
                            xytext = (0,0.2),             # offsetting label position above its bar
                            textcoords = "offset points", # Offset (in points) from the *xy* value
@@ -125,7 +127,7 @@ def main(options):
         plt.subplots_adjust(hspace=0.8)
 
         axs[0].plot(results, 'ob', alpha=0.1, markersize=2)
-        axs[0].plot(np.arange(len(results))[results>3], results[results>3], 'ob', alpha=0.6, markersize=2)
+        axs[0].plot(np.arange(len(results))[results>=5], results[results>=5], 'ob', alpha=0.5, markersize=2)
         axs[0].set_title("After learning")
         axs[0].set_xlabel("Iteration")
         axs[0].set_ylabel("Points scored")
@@ -143,6 +145,7 @@ def main(options):
           height = int(freq[n])
           if height > 0:
               plt.annotate("%.1f%%"%(height/(exp_its*exp_pop_size)*100),
+                           size = 8,
                            xy = (x, height),             # top left corner of the histogram bar
                            xytext = (0,0.2),             # offsetting label position above its bar
                            textcoords = "offset points", # Offset (in points) from the *xy* value
@@ -162,7 +165,7 @@ def q_learning(env, q_table):
     # Hyperparameters
     alpha = 0.05        #0.1    #learning rate
     gamma = 0.95        #0.6    #discount rate
-    epsilon = 0.15      #0.1
+    epsilon = 0.05       #0.1
 
     # For plotting metrics
     all_scores = np.zeros(q_its*population_size)

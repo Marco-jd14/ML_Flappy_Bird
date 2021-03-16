@@ -155,7 +155,8 @@ class FlappyBirdEnvSimple(gym.Env):
 
         start = datetime.now()
 
-        rewards = np.array([-10*bird.score for bird in self._game.birds])  #save prev scores first to be able to compute rewards later
+        point_factor = 1
+        rewards = np.array([-point_multiplier*bird.score for bird in self._game.birds], dtype=float)  #save prev scores first to be able to compute rewards later
         prev_alives = np.array([bird.alive for bird in self._game.birds])
 
         alives = self._game.update_state(actions) #alive info for all birds
@@ -166,10 +167,10 @@ class FlappyBirdEnvSimple(gym.Env):
 
         for i in range(self._game.nr_of_birds):
             if done[i]:
-                rewards[i] = -1000 if prev_alives[i] else 0
+                rewards[i] = -10 if prev_alives[i] else 0
             else:
-                rewards[i] += self._game.birds[i].score*10 - actions[i] #rewards = (new_points - prev_points)*10 - action
-                rewards[i] += (datetime.now() - start).microseconds/10000
+                rewards[i] += self._game.birds[i].score*point_factor - actions[i] #rewards = (new_points - prev_points)*10 - action
+                rewards[i] += (datetime.now() - start).microseconds/1000
 
         return obs, rewards, done, scores
 
