@@ -22,10 +22,10 @@ nr_states_v = 100
 nr_feats = 2
 
 population_size = 100
-q_its = int(100000/population_size)
+q_its = int(200000/population_size)
 
 exp_pop_size = 5                    #every bird does exactly the same thing anyway (based on q_table)
-exp_its = int(2000/exp_pop_size)
+exp_its = int(10000/exp_pop_size)
 
 # For progress bar
 bar_length = 30
@@ -38,41 +38,51 @@ def main(options):
     test_result = 1
     gui_loops = 0
 
-    filename = "q_table4 - Insane.npy"
-    save_as = "q_table4.npy"
-    if os.path.isfile(filename):
+    filename = "q_tables/q_table.npy"
+    save_as = "q_tables/q_table.npy"
+    overwrite = 0
+    if os.path.isfile(filename) and not overwrite:
         with open(filename, 'rb') as f:
             q_table_before = np.load(f)
+        with open("q_tables/all_scores.npy", 'rb') as f:
+            all_scores_before = np.load(f)
     else:
         q_table_before = np.zeros([nr_states_h * nr_states_v, env.action_space.n])
+        all_scores_before = np.zeros(0,dtype=int)
 
-    # Uncomment if we want to start training from scratch:
-    # q_table_before = np.zeros([nr_states_h * nr_states_v, env.action_space.n])
 
     if train:
         start1 = datetime.now()
 
         q_table, all_scores = q_learning(env, np.copy(q_table_before))
+        all_scores = np.hstack([all_scores_before, all_scores])
 
         end1 = datetime.now()
         print("\nTraining took %.2f mins\n"%((end1-start1).seconds/60))
         np.save(save_as, q_table)
-        np.save("all_scores.npy", all_scores)
+        np.save("q_tables/all_scores.npy", all_scores)
 
     else:
         q_table = q_table_before
+        with open("q_tables/all_scores.npy", 'rb') as f:
+            all_scores = np.load(f)
+        start1 = datetime.now()
+        end1 = datetime.now()
+
 
     print("The q_table was updated:", not np.all(q_table==q_table_before))
     print("Proportion of q_table that is empty: %.2f%%\n" %(len(q_table[np.all(q_table==0.0,axis=1)])/nr_states_h/nr_states_v*100))
 
-    # Uncomment to see the GUI play a game based on the q_table:
+
+    # To see the GUI play a few games based on the q_table:
     for i in range(gui_loops):
         play_q_game(q_table, env, show_prints=False, fps=40, pop_size=1)
+
 
     if test_result:
         start2 = datetime.now()
 
-        results = np.zeros(exp_its*exp_pop_size)
+        results = np.zeros(exp_its*exp_pop_size, dtype=int)
         for i in range(exp_its):
             results[i*exp_pop_size:(i+1)*exp_pop_size] = play_q_game(q_table, env, show_prints=False, show_gui=False)[:]
 
@@ -90,69 +100,149 @@ def main(options):
 
     #PLOTTING THE RESULTS:
 
-    if train:
-        fig, axs = plt.subplots(2,1)
-        plt.subplots_adjust(hspace=0.8)
+    if train or True:
+        fig, axs = plt.subplots(3,1, figsize=(8,10))
+        plt.subplots_adjust(hspace=0.4) #0.8
 
-        axs[0].plot(all_scores, 'ob', alpha=0.1, markersize=2)
-        axs[0].plot(np.arange(len(all_scores))[all_scores>=5], all_scores[all_scores>=5], 'ob', alpha=0.5, markersize=2)
-        axs[0].set_title("Learning progress")
-        axs[0].set_xlabel("Iteration")
-        axs[0].set_ylabel("Points scored")
-        axs[0].set_xlim([0,len(all_scores)])
+        ax = 1
+        axs[ax].plot(all_scores, 'ob', alpha=0.1, markersize=2)
+        axs[ax].set_title("Learning progress")
+        axs[ax].set_xlabel("Iteration")
+        axs[ax].set_ylabel("Points scored")
+        axs[ax].set_xlim([0,len(all_scores)])
 
-        freq, bins, patches = axs[1].hist(all_scores, bins=50, color='red')
-        axs[1].set_ylabel("Frequency")
-        axs[1].set_xlabel("Points scored")
-        axs[1].set_title("Took %.2f mins"%((end1-start1).seconds/60))
-        axs[1].set_xlim(0)
+        ax = 2
+        freq, bins, patches = axs[ax].hist(all_scores, color='red', ec="k", bins=np.arange(-0.25,max(all_scores)+0.2501,0.5))
+        axs[ax].set_ylabel("Frequency")
+        axs[ax].set_xlabel("Points scored")
+        axs[ax].set_title("%d games ~ took %.2f mins"%(q_its,(end1-start1).seconds/60))
+        axs[ax].set_xlim(-0.25)
 
         # For histogram bin labels
         bin_centers = np.diff(bins)*0.5 + bins[:-1]
+        max_height = max(freq)
+        prev_height = -max_height
+        enough_space = 0
         for n, (fr, x, patch) in enumerate(zip(freq, bin_centers, patches)):
-          height = int(freq[n])
-          if height > 0:
-              plt.annotate("%.1f%%"%(height/len(all_scores)*100),
+            height = int(freq[n])
+            if height > 0:
+                y = height if (abs(prev_height - height)/max_height > 0.08) else (prev_height + 0.08 * max_height)
+                y = height if max(all_scores) < 17 else y
+                prev_height = y
+                enough_space = 0
+                plt.annotate("%.1f%%"%(height/len(all_scores)*100),
                            size = 8,
-                           xy = (x, height),             # top left corner of the histogram bar
+                           xy = (x, y),             # top left corner of the histogram bar
                            xytext = (0,0.2),             # offsetting label position above its bar
                            textcoords = "offset points", # Offset (in points) from the *xy* value
                            ha = 'center', va = 'bottom'
                            )
+            elif enough_space:
+                prev_height = -max_height
+            else:
+                enough_space = 1
+
+        # all_scores MUST BE INTEGERS
+        stack_per_t = max(100, int(len(all_scores)/100))
+        max_points = max(all_scores)
+        T = int(len(all_scores)/stack_per_t)
+        all_scores = all_scores[:T*stack_per_t].reshape(T, stack_per_t)
+
+        stacked_line = np.zeros((T, max_points+1))
+        for i in range(T):
+            frequencies = np.bincount(all_scores[i])
+            frequencies = np.hstack([frequencies, np.zeros(max_points+1-len(frequencies))])
+            stacked_line[i,:] = frequencies/np.sum(frequencies)
+
+        max_freq = np.max(stacked_line,axis=0)
+        for i in range(max_points+1):
+            if max_freq[max_points-i] > 0.5/100:
+                break
+        legend_nr = max_points+1-i
+
+        ax = 0
+        color_map = ["#F4F6CC", "#B9D5B2", "#84B29E", "#568F8B", "#326B77", "#1A445B", "#122740", "#000812"]
+        axs[ax].stackplot(np.linspace(0,T,T), stacked_line.T, labels=range(legend_nr), colors=color_map)
+        axs[ax].legend(fontsize="x-small", ncol=int(legend_nr/2+0.5), bbox_to_anchor=(1.0, 1.2))
+        axs[ax].set_xlim([0,T])
+        axs[ax].set_ylim([0,1])
+        axs[ax].set_ylabel("Frequency")
+        axs[ax].set_xlabel("Grouped per %d games"%stack_per_t)
 
         plt.savefig("q_learning_results.png")
 
+
     if test_result:
-        fig, axs = plt.subplots(2,1)
-        plt.subplots_adjust(hspace=0.8)
+        fig, axs = plt.subplots(3,1, figsize=(8,10))
+        plt.subplots_adjust(hspace=0.4)
 
-        axs[0].plot(results, 'ob', alpha=0.1, markersize=2)
-        axs[0].plot(np.arange(len(results))[results>=5], results[results>=5], 'ob', alpha=0.5, markersize=2)
-        axs[0].set_title("After learning")
-        axs[0].set_xlabel("Iteration")
-        axs[0].set_ylabel("Points scored")
-        axs[0].set_xlim([0,len(results)])
+        ax = 1
+        axs[ax].plot(results, 'ob', alpha=0.1, markersize=2)
+        axs[ax].set_title("After learning")
+        axs[ax].set_xlabel("Iteration")
+        axs[ax].set_ylabel("Points scored")
+        axs[ax].set_xlim([0,len(results)])
 
-        freq, bins, patches = axs[1].hist(results, bins=50, color='red')
-        axs[1].set_ylabel("Frequency")
-        axs[1].set_xlabel("Points scored")
-        axs[1].set_title("Took %.2f mins"%((end2-start2).seconds/60))
-        axs[1].set_xlim(0)
+        ax = 2
+        freq, bins, patches = axs[ax].hist(results, color='red', ec="k", bins=np.arange(-0.25,max(results)+0.2501,0.5))
+        axs[ax].set_ylabel("Frequency")
+        axs[ax].set_xlabel("Points scored")
+        axs[ax].set_title("%d games ~ took %.2f mins"%(exp_its,(end2-start2).seconds/60))
+        axs[ax].set_xlim(-0.25)
 
         # For histogram bin labels
         bin_centers = np.diff(bins)*0.5 + bins[:-1]
+        max_height = max(freq)
+        prev_height = -max_height
+        enough_space = 0
         for n, (fr, x, patch) in enumerate(zip(freq, bin_centers, patches)):
-          height = int(freq[n])
-          if height > 0:
-              plt.annotate("%.1f%%"%(height/(exp_its*exp_pop_size)*100),
+            height = int(freq[n])
+            if height > 0:
+                y = height if (abs(prev_height - height)/max_height > 0.08) else (prev_height + 0.08 * max_height)
+                prev_height = y
+                enough_space = 0
+                plt.annotate("%.1f%%"%(height/(exp_its*exp_pop_size)*100),
                            size = 8,
-                           xy = (x, height),             # top left corner of the histogram bar
+                           xy = (x, y),             # top left corner of the histogram bar
                            xytext = (0,0.2),             # offsetting label position above its bar
                            textcoords = "offset points", # Offset (in points) from the *xy* value
                            ha = 'center', va = 'bottom'
                            )
+            elif enough_space:
+                prev_height = -max_height
+            else:
+                enough_space = 1
+
+
+        # RESULTS MUST BE INTEGERS
+        stack_per_t = max(200, int(len(results)/200))
+        max_points = max(results)
+        T = int(len(results)/stack_per_t)
+        results = results[:T*stack_per_t].reshape(T, stack_per_t)
+
+        stacked_line = np.zeros((T, max_points+1))
+        for i in range(T):
+            frequencies = np.bincount(results[i])
+            frequencies = np.hstack([frequencies, np.zeros(max_points+1-len(frequencies))])
+            stacked_line[i,:] = frequencies/np.sum(frequencies)
+
+        max_freq = np.max(stacked_line,axis=0)
+        for i in range(max_points+1):
+            if max_freq[max_points-i] > 2.5/100:
+                break
+        legend_nr = max_points+1-i
+
+        ax = 0
+        color_map = ["#F4F6CC", "#B9D5B2", "#84B29E", "#568F8B", "#326B77", "#1A445B", "#122740", "#000812"]
+        axs[ax].stackplot(np.linspace(0,T,T), stacked_line.T, labels=range(legend_nr), colors=color_map)
+        axs[ax].legend(fontsize="x-small", ncol=int(legend_nr/2+0.5), bbox_to_anchor=(1.0, 1.2))
+        axs[ax].set_xlim([0,T])
+        axs[ax].set_ylim([0,1])
+        axs[ax].set_ylabel("Frequency")
+        axs[ax].set_xlabel("Grouped per %d games"%stack_per_t)
 
         plt.savefig("q_playing_results.png")
+
 
 
 
@@ -168,7 +258,7 @@ def q_learning(env, q_table):
     epsilon = 0.05       #0.1
 
     # For plotting metrics
-    all_scores = np.zeros(q_its*population_size)
+    all_scores = np.zeros(q_its*population_size, dtype=int)
 
     for i in range(q_its):
         obs = env.reset(population_size)
@@ -189,13 +279,9 @@ def q_learning(env, q_table):
             old_values = q_table[states,actions]
             next_maxs = np.max(q_table[next_states], axis=1)
 
-            # print("\n")
-            # print(q_table[states,actions])
             new_values = (1 - alpha) * old_values + alpha * (rewards + gamma * next_maxs)
             new_values[prev_done] = old_values[prev_done]  #only update in q_table for birds that are alive (or just died)
             q_table[states,actions] = new_values
-            # print(states)
-            # print(q_table[states,actions])
 
             prev_done = done
             states = next_states
@@ -303,53 +389,6 @@ def v_state(v_dist):
     return int((v_dist-min_value)/(max_value-min_value) * (nr_states_v-8)) + 4
 
 
-
-
-def play_game(env=0, show_prints=False, show_gui=False, fps=100):
-
-    if not env:
-        env = flappy_bird_gym.make("FlappyBird-v0")
-    obs = env.reset()
-
-    if show_gui:
-        env.render(exp_pop_size)
-
-    prev_sec = -1
-    while True:
-        if show_gui:
-            pygame.event.pump()
-
-        obs = env._get_observation()
-        if obs[1] < -0.05:
-            action = 1 #flap
-        else:
-            action = 0 #idle
-        # action = 1
-
-        # Processing:
-        obs, reward, done, scores = env.step(action)
-
-        if show_prints:
-            now = datetime.now().second
-            if prev_sec != now:
-                prev_sec = now
-                print("")
-                for i in range(len(obs)):
-                    print("BIRD %d:\t"%i, obs[i], "\tReward:", reward[i], "\tdied:",done[i], "\tinfo:",scores[i])
-
-        # Rendering the game:
-        # (remove this two lines during training)
-        if show_gui:
-            env.render()
-            time.sleep(1 / fps)  # FPS
-
-        # Checking if the player is still alive
-        if all(done):
-            break
-
-    env.close()
-
-    return scores
 
 
 
