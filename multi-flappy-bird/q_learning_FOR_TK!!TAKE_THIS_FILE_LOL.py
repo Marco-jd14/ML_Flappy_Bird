@@ -22,7 +22,7 @@ nr_states_v = 100
 nr_feats = 2
 
 population_size = 100
-q_its = int(600000/population_size)
+q_its = int(200000/population_size)
 
 exp_pop_size = 5                    #every bird does exactly the same thing anyway (based on q_table)
 exp_its = int(10000/exp_pop_size)
@@ -32,6 +32,9 @@ bar_length = 30
 
 
 def main(options):
+    if not os.path.exists("qtables"):
+        os.makedirs("qtables")
+
     env = flappy_bird_gym.make("FlappyBird-v0")
 
     train = 1
@@ -69,10 +72,6 @@ def main(options):
             all_scores = np.load(f)
         start1 = datetime.now()
         end1 = datetime.now()
-
-
-    print("The q_table was updated:", not np.all(q_table==q_table_before))
-    print("Proportion of q_table that is empty: %.2f%%\n" %(len(q_table[np.all(q_table==0.0,axis=1)])/nr_states_h/nr_states_v*100))
 
 
     # To see the GUI play a few games based on the q_table:
@@ -265,17 +264,12 @@ def q_learning(env, q_table):
     # Hyperparameters
     alpha = 0.05       #0.05  #0.1    #learning rate
     gamma = 0.95       #0.95  #0.6    #discount rate
-    epsilon = 0.10     #0.05  #0.1
+    epsilon = 0.05     #0.05  #0.1
 
     # For plotting metrics
     all_scores = np.zeros(q_its*population_size, dtype=int)
 
     for i in range(q_its):
-        if i > 1000:
-            epsilon = 0.05 - (0.05-0.01)*(i/q_its)
-        elif i > 500:
-            epsilon = 0.05
-
         obs = env.reset(population_size)
         states = discrete_state(obs)
 
@@ -307,7 +301,7 @@ def q_learning(env, q_table):
         if i % int(q_its/100+5) == 0:
             percent = 100.0*i/(q_its-1)
             sys.stdout.write('\r')
-            sys.stdout.write("\r{}\tTraining progress: [{:{}}] {:>3}%".format(epsilon,'='*int(percent/(100.0/bar_length)),bar_length, int(percent)))
+            sys.stdout.write("\rTraining progress: [{:{}}] {:>3}%".format('='*int(percent/(100.0/bar_length)),bar_length, int(percent)))
             sys.stdout.flush()
 
     return q_table, all_scores

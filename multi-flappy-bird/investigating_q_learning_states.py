@@ -14,18 +14,19 @@ import random
 import sys
 import os.path
 from datetime import datetime
+from matplotlib.ticker import PercentFormatter
 np.set_printoptions(suppress=True)
 
 
 nr_states_h = 100
-nr_states_v = 100
+nr_states_v = 200
 nr_feats = 2
 
 population_size = 100
-q_its = int(600000/population_size)
+q_its = int(200000/population_size)
 
 exp_pop_size = 5                    #every bird does exactly the same thing anyway (based on q_table)
-exp_its = int(10000/exp_pop_size)
+exp_its = int(5000/exp_pop_size)
 
 # For progress bar
 bar_length = 30
@@ -36,13 +37,13 @@ def main(options):
 
     train = 1
     test_result = 1
-    train_from_scratch = 1
     gui_loops = 0
 
-    settings = ""#"-1mil;0.95"
+    settings = ""
     filename = "q_tables/q_table%s.npy"%settings
     save_as = "q_tables/q_table.npy"
-    if os.path.isfile(filename) and not train_from_scratch:
+    overwrite = 1
+    if os.path.isfile(filename) and not overwrite:
         with open(filename, 'rb') as f:
             q_table_before = np.load(f)
         with open("q_tables/all_scores%s.npy"%settings, 'rb') as f:
@@ -83,9 +84,13 @@ def main(options):
     if test_result:
         start2 = datetime.now()
 
+        # observation_history = np.zeros((1,nr_feats))
+
         results = np.zeros(exp_its*exp_pop_size, dtype=int)
         for i in range(exp_its):
-            results[i*exp_pop_size:(i+1)*exp_pop_size] = play_q_game(q_table, env, show_prints=False, show_gui=False)[:]
+            points, obs = play_q_game(q_table, env, show_prints=False, show_gui=False)
+            results[i*exp_pop_size:(i+1)*exp_pop_size] = points[:]
+            # observation_history = np.concatenate((observation_history, obs))
 
             # Progress bar
             if i % int(exp_its/100 + 1) == 0:
@@ -94,14 +99,32 @@ def main(options):
                 sys.stdout.write("\rExperiment progress: [{:{}}] {:>3}%".format('='*int(percent/(100.0/bar_length)),bar_length, int(percent)))
                 sys.stdout.flush()
 
+        # observation_history = observation_history[1:]
         end2 = datetime.now()
         print("\nExperiment took %.2f mins\n"%((end2-start2).seconds/60))
         print("Fraction of games scored zero points: %.2f%%" %(len(results[results==0])/len(results)*100) )
 
+        # print("Minima:", np.min(observation_history,axis=0))
+        # print("Maxima:", np.max(observation_history,axis=0))
 
-    #PLOTTING THE RESULTS:
+        # # Minima: [  0.00347222  -0.51070313  ]
+        # # Maxima: [  1.64236111   0.52148438  ]
 
-    if train or True:
+        # plt.figure(figsize=(9,6))
+        # plt.subplot(1,3,1)
+        # plt.title("h_dist")
+        # plt.hist(observation_history[:,0], bins=40, weights=np.ones(len(observation_history[:,0])) / len(observation_history[:,0]))
+        # plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+        # plt.subplot(1,3,2)
+        # plt.title("v_dist")
+        # plt.hist(observation_history[:,1], bins=40, weights=np.ones(len(observation_history[:,0])) / len(observation_history[:,0]))
+        # plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+        # plt.subplots_adjust(wspace=0.3)
+        # plt.savefig("state_space_dists.png")
+
+
+    #PLOTTING THE RESULTS
+    if train:
         fig, axs = plt.subplots(3,1, figsize=(8,10))
         plt.subplots_adjust(hspace=0.4) #0.8
 
@@ -265,17 +288,12 @@ def q_learning(env, q_table):
     # Hyperparameters
     alpha = 0.05       #0.05  #0.1    #learning rate
     gamma = 0.95       #0.95  #0.6    #discount rate
-    epsilon = 0.10     #0.05  #0.1
+    epsilon = 0.05     #0.05  #0.1
 
     # For plotting metrics
     all_scores = np.zeros(q_its*population_size, dtype=int)
 
     for i in range(q_its):
-        if i > 1000:
-            epsilon = 0.05 - (0.05-0.01)*(i/q_its)
-        elif i > 500:
-            epsilon = 0.05
-
         obs = env.reset(population_size)
         states = discrete_state(obs)
 
@@ -307,7 +325,7 @@ def q_learning(env, q_table):
         if i % int(q_its/100+5) == 0:
             percent = 100.0*i/(q_its-1)
             sys.stdout.write('\r')
-            sys.stdout.write("\r{}\tTraining progress: [{:{}}] {:>3}%".format(epsilon,'='*int(percent/(100.0/bar_length)),bar_length, int(percent)))
+            sys.stdout.write("\rTraining progress: [{:{}}] {:>3}%".format('='*int(percent/(100.0/bar_length)),bar_length, int(percent)))
             sys.stdout.flush()
 
     return q_table, all_scores
@@ -323,6 +341,7 @@ def play_q_game(q_table, env=0, show_prints=True, show_gui=True, fps=100, pop_si
         env.render()
 
     # q_table = np.zeros([nr_states_h * nr_states_v, env.action_space.n])
+    observation_history = np.zeros((1,nr_feats))
 
     epsilon = 0.0  #for trying
     prev_sec = -1
@@ -332,11 +351,13 @@ def play_q_game(q_table, env=0, show_prints=True, show_gui=True, fps=100, pop_si
 
         states = discrete_state(obs)
         actions = np.argmax(q_table[states],axis=1)
-        # for j in range(population_size):
+        # for j in range(pop_size):
         #     if random.uniform(0, 1) < epsilon:
         #         actions[j] = env.action_space.sample()  # Explore action space
 
         obs, reward, done, scores = env.step(actions)
+        # for i in range(pop_size):
+        #     observation_history = np.concatenate((observation_history, obs[i].reshape(1,-1)))
 
         if show_prints:
             if datetime.now().second != prev_sec:  # only print once per second
@@ -355,7 +376,7 @@ def play_q_game(q_table, env=0, show_prints=True, show_gui=True, fps=100, pop_si
 
     env.close()
 
-    return scores
+    return scores, observation_history[1:]
 
 
 
@@ -373,38 +394,30 @@ def h_state(h_dist):
     min_value = 0.0
     max_value = 0.6
 
-    if h_dist < min_value:
+    if h_dist <= min_value:
         return 0
-    elif h_dist > max_value:
+    elif h_dist >= max_value:
         return nr_states_h-1
 
     #first scale between 0 and 1 then distribute over the remaining nr of states
-    return int((h_dist-min_value)/(max_value-min_value) * (nr_states_h-2))
+    return int((h_dist-min_value)/(max_value-min_value) * (nr_states_h-2)) + 1
 
 def v_state(v_dist):
     # states 0-99
-    min_value = -0.10
-    max_value = 0.10
+    min_value = -0.2
+    max_value = 0.2
 
     if v_dist < -0.3:
         return 0
-    elif v_dist < -0.2:
+    elif v_dist <= min_value:
         return 1
-    elif v_dist < -0.15:
-        return 2
-    elif v_dist < min_value:
-        return 3
     if v_dist > 0.3:
         return nr_states_v-1
-    elif v_dist > 0.2:
+    elif v_dist >= max_value:
         return nr_states_v-2
-    elif v_dist > 0.15:
-        return nr_states_v-3
-    elif v_dist > max_value:
-        return nr_states_v-4
 
     #first scale between 0 and 1 then distribute over the remaining nr of states
-    return int((v_dist-min_value)/(max_value-min_value) * (nr_states_v-8)) + 4
+    return int((v_dist-min_value)/(max_value-min_value) * (nr_states_v-4)) + 2
 
 
 
