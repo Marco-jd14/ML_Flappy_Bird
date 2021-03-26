@@ -8,10 +8,12 @@ import flappy_bird_gym
 import pygame
 import numpy as np
 import sys
+import os.path
 from argparse import ArgumentParser
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
+import scipy.stats as st
 
 nr_of_birds = 5
 iterations = int(10000/nr_of_birds)
@@ -20,7 +22,10 @@ def main(env=0, show_prints=False, show_gui=False, fps=100):
     env = flappy_bird_gym.make("FlappyBird-v0")
     bar_length = 30
 
-    test_result = 1
+    test_result = 0
+    results = 0
+
+    filename = "marco_carlo_results.npy"
 
     if test_result:
         start2 = datetime.now()
@@ -37,10 +42,22 @@ def main(env=0, show_prints=False, show_gui=False, fps=100):
                 sys.stdout.flush()
 
         end2 = datetime.now()
+        np.save(filename, results)
         print("\nExperiment took %.2f mins\n"%((end2-start2).seconds/60))
         print("Fraction of games scored zero points: %.2f%%" %(len(results[results==0])/len(results)*100) )
 
+    elif os.path.isfile(filename):
+        with open(filename, 'rb') as f:
+            results = np.load(f)
+        start2 = datetime.now()
+        end2 = datetime.now()
 
+    print("average:", np.average(results))
+    print("std dev:", np.std(results))
+    print("variance:", np.std(results)**2)
+    print("2st moment:", st.moment(results, moment=2))
+    print("3st moment:", st.moment(results, moment=3))
+    print("4st moment:", st.moment(results, moment=4))
 
     if test_result:
         fig, axs = plt.subplots(2,1, figsize=(8,7))
@@ -57,22 +74,9 @@ def main(env=0, show_prints=False, show_gui=False, fps=100):
         freq, bins, patches = axs[ax].hist(results, color='red', ec="k", bins=100, weights=np.ones(len(results)) / len(results))
         axs[ax].set_ylabel("Frequency")
         axs[ax].set_xlabel("Points scored")
-        axs[ax].set_title("%d games ~ took %.2f mins"%(iterations,(end2-start2).seconds/60))
+        axs[ax].set_title("%d games ~ took %.2f mins"%(iterations*nr_of_birds,(end2-start2).seconds/60))
         axs[ax].set_xlim(-0.25)
         axs[ax].yaxis.set_major_formatter(PercentFormatter(1))
-
-        # For histogram bin labels
-        # bin_centers = np.diff(bins)*0.5 + bins[:-1]
-        # for n, (fr, x, patch) in enumerate(zip(freq, bin_centers, patches)):
-        #     height = freq[n]
-        #     if height > 0:
-        #             plt.annotate("%.1f%%"%(height*100),
-        #                     size = 8,
-        #                     xy = (x, height),             # top left corner of the histogram bar
-        #                     xytext = (0,0.2),             # offsetting label position above its bar
-        #                     textcoords = "offset points", # Offset (in points) from the *xy* value
-        #                     ha = 'center', va = 'bottom'
-        #                     )
 
         plt.savefig("Marco_Carlo_results.png")
 
