@@ -14,7 +14,6 @@ import random
 import sys
 import os.path
 from datetime import datetime
-np.set_printoptions(suppress=True)
 
 
 nr_states_h = 100
@@ -34,18 +33,18 @@ bar_length = 30
 def main(options):
     env = flappy_bird_gym.make("FlappyBird-v0")
 
-    train = 1
+    train = 0
     test_result = 1
-    train_from_scratch = 1
+    train_from_scratch = 0
     gui_loops = 0
 
     settings = ""#"-1mil;0.95"
-    filename = "q_tables/q_table%s.npy"%settings
-    save_as = "q_tables/q_table.npy"
+    filename = "q_data/q_table%s.npy"%settings
+    save_as = "q_data/q_table.npy"
     if os.path.isfile(filename) and not train_from_scratch:
         with open(filename, 'rb') as f:
             q_table_before = np.load(f)
-        with open("q_tables/all_scores%s.npy"%settings, 'rb') as f:
+        with open("q_data/all_scores%s.npy"%settings, 'rb') as f:
             all_scores_before = np.load(f)
     else:
         q_table_before = np.zeros([nr_states_h * nr_states_v, env.action_space.n])
@@ -61,18 +60,14 @@ def main(options):
         end1 = datetime.now()
         print("\nTraining took %.2f mins\n"%((end1-start1).seconds/60))
         np.save(save_as, q_table)
-        np.save("q_tables/all_scores.npy", all_scores)
+        np.save("q_data/all_scores.npy", all_scores)
 
     else:
         q_table = q_table_before
-        with open("q_tables/all_scores%s.npy"%settings, 'rb') as f:
+        with open("q_data/all_scores%s.npy"%settings, 'rb') as f:
             all_scores = np.load(f)
         start1 = datetime.now()
         end1 = datetime.now()
-
-
-    print("The q_table was updated:", not np.all(q_table==q_table_before))
-    print("Proportion of q_table that is empty: %.2f%%\n" %(len(q_table[np.all(q_table==0.0,axis=1)])/nr_states_h/nr_states_v*100))
 
 
     # To see the GUI play a few games based on the q_table:
@@ -170,7 +165,7 @@ def main(options):
         axs[ax].set_ylabel("Frequency")
         axs[ax].set_xlabel("Grouped per %d games"%stack_per_t)
 
-        plt.savefig("q_learning_results.png")
+        plt.savefig("q_data/q_learning_results.png")
 
 
     if test_result:
@@ -215,8 +210,6 @@ def main(options):
                            )
                 else:
                     skip = 0
-            # elif skip:
-                # pass
             elif enough_space > (2 if (max(results) > 35) else 0) :
                 prev_height = -max_height
                 skip = 0
@@ -251,7 +244,7 @@ def main(options):
         axs[ax].set_ylabel("Frequency")
         axs[ax].set_xlabel("Grouped per %d games"%stack_per_t)
 
-        plt.savefig("q_playing_results.png")
+        plt.savefig("q_data/q_playing_results.png")
 
 
 
@@ -265,7 +258,7 @@ def q_learning(env, q_table):
     # Hyperparameters
     alpha = 0.05       #0.05  #0.1    #learning rate
     gamma = 0.95       #0.95  #0.6    #discount rate
-    epsilon = 0.10     #0.05  #0.1
+    epsilon = 0.05     #0.05  #0.1
 
     # For plotting metrics
     all_scores = np.zeros(q_its*population_size, dtype=int)
