@@ -14,15 +14,17 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 import scipy.stats as st
+import seaborn as sns
 
 nr_of_birds = 5
-iterations = int(10000/nr_of_birds)
+iterations = int(2000/nr_of_birds)
+value = -0.054
 
 def main(env=0, show_prints=False, show_gui=False, fps=100):
     env = flappy_bird_gym.make("FlappyBird-v0")
     bar_length = 30
 
-    test_result = 0
+    test_result = 1
     results = 0
 
     filename = "marco_carlo_results.npy"
@@ -59,8 +61,8 @@ def main(env=0, show_prints=False, show_gui=False, fps=100):
     print("3st moment:", st.moment(results, moment=3))
     print("4st moment:", st.moment(results, moment=4))
 
-    if test_result:
-        fig, axs = plt.subplots(2,1, figsize=(8,7))
+    if test_result or True:
+        fig, axs = plt.subplots(2,1, figsize=(10,7))
         plt.subplots_adjust(hspace=0.4)
 
         ax = 0
@@ -78,6 +80,18 @@ def main(env=0, show_prints=False, show_gui=False, fps=100):
         axs[ax].set_xlim(-0.25)
         axs[ax].yaxis.set_major_formatter(PercentFormatter(1))
 
+        plt.savefig("Marco_Carlo_results.png")
+
+        plt.figure()
+        sns.histplot(data=results, kde=True, color = 'darkblue',bins=40, stat="probability")
+        # sns.displot(data=results, kde=True, color = 'darkblue',bins=int(180/5))
+        # sns.distplot(results, hist=True, kde=True,
+        #      bins=int(180/5), norm_hist=True, color = 'darkblue',
+        #      hist_kws={'edgecolor':'black'},
+        #      kde_kws={'linewidth': 1})
+        plt.xlabel("Points scored")
+        plt.title("Baseline - %d games"%10000)
+        plt.xlim(0)
         plt.savefig("Marco_Carlo_results.png")
 
 
@@ -98,7 +112,7 @@ def play_game(env=0, show_prints=False, show_gui=False, fps=100):
         actions = np.zeros(nr_of_birds)
         obs = env._get_observation()
         for i in range(nr_of_birds):
-            actions[i] = (obs[i][1] < -0.05)
+            actions[i] = (obs[i][1] < value)
 
         # Processing:
         obs, reward, done, scores = env.step(actions)
