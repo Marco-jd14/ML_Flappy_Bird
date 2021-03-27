@@ -4,8 +4,8 @@ __pycache__/
 *$py.class
 
 # Files
-*.npy
-*.png
+.npy
+.png
 
 # C extensions
 *.so
