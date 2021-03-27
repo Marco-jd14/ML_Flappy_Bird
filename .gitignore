@@ -6,9 +6,9 @@ __pycache__/
 # Files
 .npy
 .png
-plots_hyper_parameters/
-plots_rewards_marco/
-plots_rewards_TK/
+multi-flappy-bird/plots_hyper_parameters/
+multi-flappy-bird/plots_rewards_marco/
+multi-flappy-bird/plots_rewards_TK/
 
 # C extensions
 *.so
